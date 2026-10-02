@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mes 150 Recettes</title>
+    <style>
+      :root {
+        --primary: #ff6b6b;
+        --bg: #f7f9fc;
+        --text: #2d3436;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 20px;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      h1 {
+        color: var(--primary);
+        font-size: 2.5em;
+      }
+
+      #recettes-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        transition: transform 0.2s;
+        border-top: 4px solid var(--primary);
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+      }
+      .card h3 {
+        margin-top: 0;
+        color: #333;
+      }
+      .badge {
+        background: #eee;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: bold;
+        margin-right: 5px;
+      }
+
+      #modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background: white;
+        width: 90%;
+        max-width: 600px;
+        border-radius: 12px;
+        padding: 30px;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+      }
+      .close-btn {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #888;
+      }
+      .close-btn:hover {
+        color: red;
+      }
+      ul,
+      ol {
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>👨‍🍳 Base de Données : Gestion de Recettes</h1>
+      <p>
+        Projet de gestion de recettes avec liaisons complexes (Ingrédients,
+        Ustensiles, Instructions)
+      </p>
+    </header>
+
+    <div id="recettes-container"></div>
+
+    <div id="modal" onclick="fermerModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <span
+          class="close-btn"
+          onclick="document.getElementById('modal').style.display = 'none'"
+          >&times;</span
+        >
+        <h2 id="modal-titre">Titre</h2>
+        <p>
+          <strong>Temps:</strong> <span id="modal-temps"></span> min |
+          <strong>Difficulté:</strong> <span id="modal-diff"></span>
+        </p>
+
+        <h3>🛒 Ingrédients</h3>
+        <ul id="modal-ingredients"></ul>
+
+        <h3>📝 Instructions</h3>
+        <ol id="modal-instructions"></ol>
+      </div>
+    </div>
+
+    <script>
+      fetch("/api/recettes")
+        .then((response) => response.json())
+        .then((data) => {
+          const container = document.getElementById("recettes-container");
+          data.forEach((recette) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.onclick = () => afficherDetails(recette.id_recette);
+            card.innerHTML = `
+                        <h3>${recette.nom_recette}</h3>
+                        <p>
+                            <span class="badge">⏱️ ${recette.temps_prep} min</span>
+                            <span class="badge">👨‍🍳 ${recette.difficulte}</span>
+                        </p>
+                        <p style="color: gray; font-size: 0.9em;">${recette.categorie_recette}</p>
+                    `;
+            container.appendChild(card);
+          });
+        });
+
+      function afficherDetails(id) {
+        fetch(`/api/recette/${id}`)
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("modal-titre").innerText =
+              data.recette.nom_recette;
+            document.getElementById("modal-temps").innerText =
+              data.recette.temps_prep;
+            document.getElementById("modal-diff").innerText =
+              data.recette.difficulte;
+
+            const ul = document.getElementById("modal-ingredients");
+            ul.innerHTML = "";
+            data.ingredients.forEach((ing) => {
+              ul.innerHTML += `<li><strong>${ing.quantite} ${ing.unite_mesure}</strong> de ${ing.nom_ing}</li>`;
+            });
+
+            const ol = document.getElementById("modal-instructions");
+            ol.innerHTML = "";
+            data.instructions.forEach((inst) => {
+              ol.innerHTML += `<li>${inst.description_action}</li>`;
+            });
+
+            document.getElementById("modal").style.display = "flex";
+          });
+      }
+
+      function fermerModal(event) {
+        if (event.target.id === "modal") {
+          document.getElementById("modal").style.display = "none";
+        }
+      }
+    </script>
+  </body>
+</html>
