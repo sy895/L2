@@ -1,0 +1,7 @@
+.DS_Store
+*.class
+*.o
+*.out
+node_modules/
+.vscode/
+.idea/
